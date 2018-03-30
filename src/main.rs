@@ -59,11 +59,17 @@ const TOMA_RESTART_MSG: &'static str = r###"
 const BREAK_RESTART_MSG: &'static str = r###"
 <span font='16'>Start Break?</span>"###;
 
-const COUNT: &'static str = r###"
-<span font='11'><tt>Tomatoros Completed: {}</tt></span>"###;
+// const COUNT: &'static str = r###"
+// <span font='11'><tt>Tomatoros Completed: {}</tt></span>"###;
 
-const TOTAL_TIME: &'static str = r###"
-<span font='11'><tt>Total Time: {}</tt></span>"###;
+macro_rules! COUNT {() => (r###"
+<span font='11'><tt>Tomatoros Completed: {}</tt></span>"###)}
+
+macro_rules! TOTAL_TIME {() => (r###"
+<span font='11'><tt>Total Time: {}</tt></span>"###)}
+
+// const TOTAL_TIME: &'static str = r###"
+// <span font='11'><tt>Total Time: {}</tt></span>"###;
 
 
 // def alarm():
@@ -127,134 +133,29 @@ fn make_button(margin_top: i32, margin_bottom: i32) -> gtk::Button {
     return new_button
 }
 
-// class Tomaty(Gtk.Window):
-//     def __init__(self):
-//         """init for main class Tomaty, runs tomaty app"""
-
-//         # start button
-//         self.tomatyButton = TomatyButton(tmargin=5, bmargin=5)
-//         self.tomatyButton.connect("clicked", self.click_start)
-//         self.timerPage.pack_start(self.tomatyButton, False, False, 0)
-//         self.notebook.append_page(
-//             child=self.timerPage, tab_label=Gtk.Label(label='tomatoro'))
-
-//         # statistics page setup
-//         self.statsPage = TomatyPage()
-//         self.countLabel = StatsLabel(
-//             label=COUNT.format(self.tomatosCompleted), smargin=10, emargin=10)
-
-//         total = str(self.tomatoroLength * self.tomatosCompleted)
-//         self.totalLabel = StatsLabel(
-//             label=TOTAL_TIME.format(total),
-//             emargin=25,
-//             justify=Gtk.Justification.LEFT)
-
-//         self.statsPage.pack_start(self.countLabel, False, False, 0)
-//         self.statsPage.pack_start(self.totalLabel, False, False, 0)
-//         self.notebook.append_page(
-//             child=self.statsPage, tab_label=Gtk.Label(label="stats"))
-
-//     def click_start(self, tomatyButton):
-//         # begin counting!
-//         if self.running is False:
-//             self.running = True
-//             self.tomatyButton.updateButton()
-//             if self.breakPeriod is False:
-//                 self.remTime = self.tomaTime
-//                 GLib.timeout_add_seconds(1, self.countDown)
-//             else:
-//                 self.remTime = self.breakTime
-//                 GLib.timeout_add_seconds(interval=1, function=self.countDown)
-//         else:
-//             self.running = False
-//             self.tomatyButton.updateButton()
-//             if self.breakPeriod is False:
-//                 self.timerLabel.set_markup(str=TOMA_RESTART_MSG)
-//                 self.remTime = self.tomaTime
-//                 GLib.SOURCE_REMOVE
-//             else:
-//                 self.timerLabel.set_markup(str=BREAK_RESTART_MSG)
-//                 self.remTime = self.breakTime
-//                 GLib.SOURCE_REMOVE
-
-//     def countDown(self):
-//         # check to make sure countdown is not done if it is done, then we need
-//         # to reset a lot of things before going forward
-//         if self.remTime == timedelta(seconds=0):
-//             alarm()
-//             self.running = False
-//             self.tomatyButton.updateButton()
-//             if self.breakPeriod is False:
-//                 self.tomatosCompleted += 1
-//                 self.countLabel.set_markup(
-//                     str=COUNT.format(self.tomatosCompleted))
-
-//                 total = str(self.tomatoroLength * self.tomatosCompleted)
-//                 self.totalLabel.set_markup(str=TOTAL_TIME.format(total))
-//                 self.timerLabel.set_markup(str=TOMA_MSG)
-//                 self.breakPeriod = True
-//             else:
-//                 self.timerLabel.set_markup(str=BREAK_MSG)
-//                 self.breakPeriod = False
-
-//             return GLib.SOURCE_REMOVE
-
-//         if self.running is False:
-//             return GLib.SOURCE_REMOVE
-
-//         self.timerLabel.set_markup(str=TIMER_FRMT.format(self.tickTock()))
-//         # signal to continue countdown within main loop
-//         return GLib.SOURCE_CONTINUE
-
-//     def tickTock(self):
-//         # TODO: change to minutes format when done dev'ing
-//         self.remTime = self.remTime - timedelta(seconds=1)
-
-//         return str(self.remTime)[2:]
-
 struct Tomaty {
-    tomatos_completed: u64,
+    tomatos_completed: i32,
     running: bool,
     break_period: bool,
     toma_time: Duration,
     break_time: Duration,
     remaining_time: Duration,
+    tomatoro_length: Duration,
+    tomaty_button: gtk::Button,
     timer_label: gtk::Label,
-    // tomatoro_length: Duration,
+    count_label: gtk::Label,
+    total_label: gtk::Label,
 }
 
 // fn current_time() -> String {
 //     return format!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
 // }
 
-// def click_start(self, tomatyButton):
-//     # begin counting!
-//     if self.running is False:
-//         self.running = True
-//         self.tomatyButton.updateButton()
-//         if self.breakPeriod is False:
-//             self.remTime = self.tomaTime
-//             GLib.timeout_add_seconds(1, self.countDown)
-//         else:
-//             self.remTime = self.breakTime
-//             GLib.timeout_add_seconds(interval=1, function=self.countDown)
-//     else:
-//         self.running = False
-//         self.tomatyButton.updateButton()
-//         if self.breakPeriod is False:
-//             self.timerLabel.set_markup(str=TOMA_RESTART_MSG)
-//             self.remTime = self.tomaTime
-//             GLib.SOURCE_REMOVE
-//         else:
-//             self.timerLabel.set_markup(str=BREAK_RESTART_MSG)
-//             self.remTime = self.breakTime
-//             GLib.SOURCE_REMOVE
-
 // <'r> button: &'r gtk::Button
-fn connect_click_start(button: gtk::Button, tomaty: Rc<RefCell<Tomaty>>) {
-    // button.connect_clicked(clone!(tomaty => move |_| {
-    //     println!("Button clicked!");
-    // }));
+fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
+    let outer_tomato_heaven = tomaty.clone();
+    let ref button = outer_tomato_heaven.borrow().tomaty_button;
+
     button.connect_clicked(move |cb_button: &gtk::Button| {
         let mut tomtom = tomaty.borrow_mut();
         if tomtom.running {
@@ -263,24 +164,27 @@ fn connect_click_start(button: gtk::Button, tomaty: Rc<RefCell<Tomaty>>) {
             if tomtom.break_period {
                 tomtom.timer_label.set_markup(BREAK_RESTART_MSG);
                 tomtom.remaining_time = tomtom.break_time;
+                //             GLib.SOURCE_REMOVE
             } else {
-                // let toma_restart_msg =
-                //     format!(TIMER_FRMT!(), remaining_default);
-
                 tomtom.timer_label.set_markup(TOMA_RESTART_MSG);
                 tomtom.remaining_time = tomtom.toma_time;
+                //             GLib.SOURCE_REMOVE
             };
         } else {
             tomtom.running = true;
             update_button(&cb_button);
             if tomtom.break_period {
                 tomtom.remaining_time = tomtom.break_time;
-                gtk::timeout_add_seconds(1, countdown);
-                // GLib.timeout_add_seconds(interval=1, function=self.countDown)
+                let timer_formatted = format!(TIMER_FRMT!(), format!("{}", tomtom.remaining_time));
+                tomtom.timer_label.set_markup(&timer_formatted);
+
+                add_timeout_countdown(tomaty.clone());
             } else {
                 tomtom.remaining_time = tomtom.toma_time;
-                gtk::timeout_add_seconds(1, countdown);
-                // GLib.timeout_add_seconds(1, self.countDown)
+                let timer_formatted = format!(TIMER_FRMT!(), format!("{}", tomtom.remaining_time));
+                tomtom.timer_label.set_markup(&timer_formatted);
+
+                add_timeout_countdown(tomaty.clone());
             };
         };
         println!("Button clicked!");
@@ -288,12 +192,54 @@ fn connect_click_start(button: gtk::Button, tomaty: Rc<RefCell<Tomaty>>) {
 
 }
 
-fn countdown() -> gtk::Continue {
-    unimplemented!();
+fn alarm() {
+    println!("WAKE UP FUCKO");
+}
+
+fn tick_tock(tomaty: &mut Tomaty) -> String {
+    tomaty.remaining_time = tomaty.remaining_time - Duration::seconds(1);
+    return format!("{}", tomaty.remaining_time)
+}
+
+// -> gtk::Continue
+fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
+    gtk::timeout_add_seconds(1, move || {
+        let mut tomtom = tomaty.borrow_mut();
+        if tomtom.remaining_time == Duration::seconds(0) {
+            alarm();
+            tomtom.running = false;
+            update_button(&tomtom.tomaty_button);
+            if tomtom.break_period {
+                tomtom.timer_label.set_markup(BREAK_MSG);
+                tomtom.break_period = false;
+            } else {
+                tomtom.tomatos_completed += 1;
+                let count_formatted =
+                    format!(COUNT!(), tomtom.tomatos_completed);
+                tomtom.count_label.set_markup(&count_formatted);
+                let total = tomtom.tomatoro_length * tomtom.tomatos_completed;
+                let total_formatted=
+                    format!(TOTAL_TIME!(), total);
+                tomtom.total_label.set_markup(&total_formatted);
+                tomtom.timer_label.set_markup(TOMA_MSG);
+                tomtom.break_period = true;
+            }
+            return gtk::Continue(false)
+        }
+        if !tomtom.running {
+            return gtk::Continue(false)
+        }
+        let timer_formatted = format!(TIMER_FRMT!(), tick_tock(&mut tomtom));
+        tomtom.timer_label.set_markup(&timer_formatted);
+        return gtk::Continue(true)
+    });
 }
 
 fn update_button(button: &gtk::Button) {
-    unimplemented!();
+    match button.get_label().as_ref().map(String::as_ref) {
+        Some("start") => button.set_label("restart"),
+        _ => button.set_label("start"),
+    }
 }
 
 // tomaty: Rc<RefCell<Tomaty>>
@@ -303,7 +249,7 @@ fn make_window() -> gtk::Window {
     window.set_title("tomaty: gtk::Focus");
     window.set_border_width(5);
     window.set_resizable(false);
-    
+
     window.set_position(gtk::WindowPosition::Center);
     window.set_default_size(350, 70);
 
@@ -331,16 +277,44 @@ fn make_window() -> gtk::Window {
     let tab_label = make_label("tomatoro");
     notebook.append_page(&timer_page, Some(&tab_label));
 
+    let stats_page = make_tomaty_page();
+    let tomatos_completed_default = 0;
+    let count_label_formatted =
+        format!(COUNT!(), tomatos_completed_default);
+    let count_label = make_label(&count_label_formatted);
+    count_label.set_margin_start(10);
+    count_label.set_margin_end(10);
+
+    let tomatoro_length_default = Duration::minutes(25);
+    let total = tomatoro_length_default * tomatos_completed_default;
+    let total_formatted=
+        format!(TOTAL_TIME!(), total);
+
+    let total_label = make_label(&total_formatted);
+    total_label.set_margin_end(25);
+    total_label.set_justify(gtk::Justification::Left);
+
+    stats_page.pack_start(&count_label, false, false, 0);
+    stats_page.pack_start(&total_label, false, false, 0);
+
+    let stats_tab_label = make_label("stats");
+    notebook.append_page(&stats_page, Some(&stats_tab_label));
+
     let tomaty = Rc::new(RefCell::new(Tomaty {
-        tomatos_completed: 0,
+        tomatos_completed: tomatos_completed_default.clone(),
         running: false,
         break_period: false,
         toma_time: Duration::minutes(20),
         break_time: Duration::minutes(5),
         remaining_time: remaining_default.clone(),
+        tomatoro_length: tomatoro_length_default.clone(),
+        tomaty_button: tomaty_button,
         timer_label: timer_label,
+        count_label: count_label,
+        total_label: total_label,
     }));
 
+    connect_click_start(tomaty.clone());
     window.show_all();
     window
 }
