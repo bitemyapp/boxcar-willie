@@ -218,7 +218,7 @@ fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
                     format!(COUNT!(), tomtom.tomatos_completed);
                 tomtom.count_label.set_markup(&count_formatted);
                 let total = tomtom.tomatoro_length * tomtom.tomatos_completed;
-                let total_formatted=
+                let total_formatted =
                     format!(TOTAL_TIME!(), total);
                 tomtom.total_label.set_markup(&total_formatted);
                 tomtom.timer_label.set_markup(TOMA_MSG);
@@ -254,7 +254,6 @@ fn make_window() -> gtk::Window {
     window.set_default_size(350, 70);
 
     window.connect_delete_event(|_, _| {
-        // panic!("lol");
         gtk::main_quit();
         Inhibit(false)
     });
