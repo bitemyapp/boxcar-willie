@@ -281,7 +281,8 @@ fn make_window() -> gtk::Window {
     let tomatos_completed_default = 0;
     let count_label_formatted =
         format!(COUNT!(), tomatos_completed_default);
-    let count_label = make_label(&count_label_formatted);
+    let count_label = make_label("");
+    count_label.set_markup(&count_label_formatted);
     count_label.set_margin_start(10);
     count_label.set_margin_end(10);
 
@@ -290,7 +291,8 @@ fn make_window() -> gtk::Window {
     let total_formatted=
         format!(TOTAL_TIME!(), total);
 
-    let total_label = make_label(&total_formatted);
+    let total_label = make_label("");
+    total_label.set_markup(&total_formatted);
     total_label.set_margin_end(25);
     total_label.set_justify(gtk::Justification::Left);
 
@@ -324,7 +326,6 @@ fn main() {
         println!("Failed to initialize GTK.");
         return;
     }
-    // make_window(tomaty.clone());
     make_window();
     gtk::main();
 }
