@@ -219,6 +219,7 @@ struct Tomaty {
     toma_time: Duration,
     break_time: Duration,
     remaining_time: Duration,
+    timer_label: gtk::Label,
     // tomatoro_length: Duration,
 }
 
@@ -249,11 +250,54 @@ struct Tomaty {
 //             self.remTime = self.breakTime
 //             GLib.SOURCE_REMOVE
 
-// tomaty: &Tomaty
-fn click_start<'r>(button: &'r gtk::Button) {
+// <'r> button: &'r gtk::Button
+fn connect_click_start(button: gtk::Button, tomaty: Rc<RefCell<Tomaty>>) {
+    // button.connect_clicked(clone!(tomaty => move |_| {
+    //     println!("Button clicked!");
+    // }));
+    button.connect_clicked(move |cb_button: &gtk::Button| {
+        let mut tomtom = tomaty.borrow_mut();
+        if tomtom.running {
+            tomtom.running = false;
+            update_button(&cb_button);
+            if tomtom.break_period {
+                tomtom.timer_label.set_markup(BREAK_RESTART_MSG);
+                tomtom.remaining_time = tomtom.break_time;
+            } else {
+                // let toma_restart_msg =
+                //     format!(TIMER_FRMT!(), remaining_default);
+
+                tomtom.timer_label.set_markup(TOMA_RESTART_MSG);
+                tomtom.remaining_time = tomtom.toma_time;
+            };
+        } else {
+            tomtom.running = true;
+            update_button(&cb_button);
+            if tomtom.break_period {
+                tomtom.remaining_time = tomtom.break_time;
+                gtk::timeout_add_seconds(1, countdown);
+                // GLib.timeout_add_seconds(interval=1, function=self.countDown)
+            } else {
+                tomtom.remaining_time = tomtom.toma_time;
+                gtk::timeout_add_seconds(1, countdown);
+                // GLib.timeout_add_seconds(1, self.countDown)
+            };
+        };
+        println!("Button clicked!");
+    });
+
 }
 
-fn make_window(tomaty: Rc<RefCell<Tomaty>>) -> gtk::Window {
+fn countdown() -> gtk::Continue {
+    unimplemented!();
+}
+
+fn update_button(button: &gtk::Button) {
+    unimplemented!();
+}
+
+// tomaty: Rc<RefCell<Tomaty>>
+fn make_window() -> gtk::Window {
     let window = gtk::Window::new(gtk::WindowType::Toplevel);
 
     window.set_title("tomaty: gtk::Focus");
@@ -274,42 +318,28 @@ fn make_window(tomaty: Rc<RefCell<Tomaty>>) -> gtk::Window {
     window.add(&notebook);
 
     let timer_page = make_tomaty_page();
-    let rem_time = format!(TIMER_FRMT!(), tomaty.borrow().remaining_time);
+    let remaining_default = Duration::minutes(0);
+    let rem_time = format!(TIMER_FRMT!(), remaining_default);
     let timer_label = make_label("");
     timer_label.set_markup(&rem_time);
     timer_page.pack_start(&timer_label, true, true, 0);
 
     let tomaty_button = make_button(5, 5);
-    tomaty_button.connect_clicked(click_start);
-    // tomaty_button.connect_clicked(clone!(tomaty => move |_| {
-    //     // let nb = u32::from_str(counter_label.get_text()
-    //     //                                    .unwrap_or("0".to_owned())
-    //     //                                    .as_str()).unwrap_or(0);
-    //     // if nb > 0 {
-    //     //     counter_label.set_text(&format!("{}", nb - 1));
-    //     // }
-    //     println!("Button clicked!");
-    // }));
+    // tomaty_button.connect_clicked(click_start);
     timer_page.pack_start(&tomaty_button, false, false, 0);
 
     let tab_label = make_label("tomatoro");
     notebook.append_page(&timer_page, Some(&tab_label));
 
-    // let time = current_time();
-    // let label = gtk::Label::new(None);
-    // label.set_text(&time);
-    // window.add(&label);
-
-    // // we are using a closure to capture the label (else we could also use a normal function)
-    // let tick = move || {
-    //     let time = current_time();
-    //     label.set_text(&time);
-    //     // we could return gtk::Continue(false) to stop our clock after this tick
-    //     gtk::Continue(true)
-    // };
-
-    // // executes the closure once every second
-    // gtk::timeout_add_seconds(1, tick);
+    let tomaty = Rc::new(RefCell::new(Tomaty {
+        tomatos_completed: 0,
+        running: false,
+        break_period: false,
+        toma_time: Duration::minutes(20),
+        break_time: Duration::minutes(5),
+        remaining_time: remaining_default.clone(),
+        timer_label: timer_label,
+    }));
 
     window.show_all();
     window
@@ -320,26 +350,7 @@ fn main() {
         println!("Failed to initialize GTK.");
         return;
     }
-    let tomaty = Rc::new(RefCell::new(Tomaty {
-        tomatos_completed: 0,
-        running: false,
-        break_period: false,
-        toma_time: Duration::minutes(20),
-        break_time: Duration::minutes(5),
-        remaining_time: Duration::minutes(0),
-        // tomatoro_length: Duration::minutes(25),
-    }));
-
-    // let tomaty = Tomaty {
-    //     tomatos_completed: 0,
-    //     running: false,
-    //     break_period: false,
-    //     toma_time: Duration::minutes(20),
-    //     break_time: Duration::minutes(5),
-    //     remaining_time: Duration::minutes(0),
-    //     // tomatoro_length: Duration::minutes(25),
-    // };
-
-    make_window(tomaty.clone());
+    // make_window(tomaty.clone());
+    make_window();
     gtk::main();
 }
