@@ -19,7 +19,7 @@ use gtk::prelude::*;
 use gtk::Builder;
 use Continue;
 
-// make moving clones into closures more convenient
+// Makes moving clones into closures more convenient
 macro_rules! clone {
     (@param _) => ( _ );
     (@param $x:ident) => ( $x );
@@ -47,14 +47,16 @@ macro_rules! COUNT {() => (r###"
 macro_rules! TOTAL_TIME {() => (r###"
 <span font='11'><tt>Total Time: {}</tt></span>"###)}
 
-const TOMA_MINUTES: u8 = 25;
-const BREAK_MINUTES: u8 = 5;
+const TOMA_MINUTES: i64 = 3;
+const BREAK_MINUTES: i64 = 5;
 
 const TOMA_MSG: &'static str = r###"
-<span font='16'>Tomatoro Done!\nStart Break?</span>"###;
+<span font='16'>Tomatoro Done!
+Start Break?</span>"###;
 
 const BREAK_MSG: &'static str = r###"
-<span font='16'>Break Over!\nStart Tomatoro?</span>"###;
+<span font='16'>Break Over!
+Start Tomatoro?</span>"###;
 
 const TOMA_RESTART_MSG: &'static str = r###"
 <span font='16'>Start Tomatoro?</span>"###;
@@ -64,7 +66,6 @@ const BREAK_RESTART_MSG: &'static str = r###"
 
 fn make_label(label: &str) -> gtk::Label {
     let new_label = gtk::Label::new(label);
-    // new_label.set_markup(label);
     new_label.set_margin_start(0);
     new_label.set_margin_end(0);
     new_label.set_margin_top(0);
@@ -72,17 +73,6 @@ fn make_label(label: &str) -> gtk::Label {
     new_label.set_justify(gtk::Justification::Center);
     return new_label
 }
-
-// fn make_stats_label(label: &str) -> gtk::Label {
-//     let new_label = gtk::Label::new(label);
-//     // new_label.set_markup(label);
-//     new_label.set_margin_start(0);
-//     new_label.set_margin_end(0);
-//     new_label.set_margin_top(0);
-//     new_label.set_margin_bottom(0);
-//     new_label.set_justify(gtk::Justification::Center);
-//     return new_label
-// }
 
 fn make_tomaty_notebook() -> gtk::Notebook {
     let new_notebook = gtk::Notebook::new();
@@ -92,17 +82,9 @@ fn make_tomaty_notebook() -> gtk::Notebook {
 
 fn make_tomaty_page() -> gtk::Box {
     let new_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    // new_box.set_orientation(gtk::Orientation::Vertical);
-    // new_box.set_spacing(0);
     new_box.set_homogeneous(false);
     return new_box
 }
-
-//     def updateButton(self):
-//         if self.get_label() == "start":
-//             self.set_label("restart")
-//         else:
-//             self.set_label("start")
 
 fn make_button(margin_top: i32, margin_bottom: i32) -> gtk::Button {
     let new_button = gtk::Button::new();
@@ -138,7 +120,6 @@ fn update_timer(tomtom: &mut Tomaty) {
     tomtom.timer_label.set_markup(&timer_formatted);
 }
 
-// <'r> button: &'r gtk::Button
 fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
     let outer_tomato_heaven = tomaty.clone();
     let ref button = outer_tomato_heaven.borrow().tomaty_button;
@@ -151,11 +132,9 @@ fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
             if tomtom.break_period {
                 tomtom.timer_label.set_markup(BREAK_RESTART_MSG);
                 tomtom.remaining_time = tomtom.break_time;
-                //             GLib.SOURCE_REMOVE
             } else {
                 tomtom.timer_label.set_markup(TOMA_RESTART_MSG);
                 tomtom.remaining_time = tomtom.toma_time;
-                //             GLib.SOURCE_REMOVE
             };
         } else {
             tomtom.running = true;
@@ -173,15 +152,8 @@ fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
 
 }
 
-// def alarm():
-//     # really need to find a cleaner, non-hack, way of getting to resources/
-//     resourcePath = path.join(path.split(__file__)[0], 'resources')
-//     alarmPath = path.join(path.join(resourcePath, 'audio'), 'alarm.wav')
-//     wav_obj = WaveObject.from_wave_file(alarmPath)
-//     wav_obj.play()
-
 fn alarm() {
-    println!("WAKE UP FUCKO");
+    println!("POMODORO OVER, TAKE A BREAK!");
 }
 
 fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
@@ -224,7 +196,6 @@ fn update_button(button: &gtk::Button) {
     }
 }
 
-// tomaty: Rc<RefCell<Tomaty>>
 fn make_window() -> gtk::Window {
     let window = gtk::Window::new(gtk::WindowType::Toplevel);
 
@@ -246,13 +217,11 @@ fn make_window() -> gtk::Window {
 
     let timer_page = make_tomaty_page();
     let remaining_default = Duration::minutes(0);
-    let rem_time = format!(TIMER_FRMT!(), remaining_default);
     let timer_label = make_label("");
-    timer_label.set_markup(&rem_time);
+    timer_label.set_markup(TOMA_RESTART_MSG);
     timer_page.pack_start(&timer_label, true, true, 0);
 
     let tomaty_button = make_button(5, 5);
-    // tomaty_button.connect_clicked(click_start);
     timer_page.pack_start(&tomaty_button, false, false, 0);
 
     let tab_label = make_label("tomatoro");
@@ -287,8 +256,8 @@ fn make_window() -> gtk::Window {
         tomatos_completed: tomatos_completed_default.clone(),
         running: false,
         break_period: false,
-        toma_time: Duration::minutes(20),
-        break_time: Duration::minutes(5),
+        toma_time: Duration::seconds(TOMA_MINUTES), // Duration::minutes(TOMA_MINUTES),
+        break_time: Duration::minutes(BREAK_MINUTES),
         remaining_time: remaining_default.clone(),
         tomatoro_length: tomatoro_length_default.clone(),
         tomaty_button: tomaty_button,
