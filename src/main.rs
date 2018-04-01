@@ -6,6 +6,8 @@ extern crate chrono;
 
 use chrono::Duration;
 use chrono::Local;
+use chrono::format;
+use chrono::NaiveTime;
 
 use std::{thread, time};
 use std::io::BufReader;
@@ -35,17 +37,18 @@ macro_rules! clone {
     );
 }
 
-const TOMA_MINUTES: u8 = 25;
-const BREAK_MINUTES: u8 = 5;
-
-// {() => ("hello")};
 macro_rules! TIMER_FRMT {() => (r###"
 <span font='34'>{}</span>
 "###)}
 
-// const TIMER_FRMT: &'static str = r###"
-// <span font='34'>{}</span>
-// "###;
+macro_rules! COUNT {() => (r###"
+<span font='11'><tt>Tomatoros Completed: {}</tt></span>"###)}
+
+macro_rules! TOTAL_TIME {() => (r###"
+<span font='11'><tt>Total Time: {}</tt></span>"###)}
+
+const TOMA_MINUTES: u8 = 25;
+const BREAK_MINUTES: u8 = 5;
 
 const TOMA_MSG: &'static str = r###"
 <span font='16'>Tomatoro Done!\nStart Break?</span>"###;
@@ -58,27 +61,6 @@ const TOMA_RESTART_MSG: &'static str = r###"
 
 const BREAK_RESTART_MSG: &'static str = r###"
 <span font='16'>Start Break?</span>"###;
-
-// const COUNT: &'static str = r###"
-// <span font='11'><tt>Tomatoros Completed: {}</tt></span>"###;
-
-macro_rules! COUNT {() => (r###"
-<span font='11'><tt>Tomatoros Completed: {}</tt></span>"###)}
-
-macro_rules! TOTAL_TIME {() => (r###"
-<span font='11'><tt>Total Time: {}</tt></span>"###)}
-
-// const TOTAL_TIME: &'static str = r###"
-// <span font='11'><tt>Total Time: {}</tt></span>"###;
-
-
-// def alarm():
-//     # really need to find a cleaner, non-hack, way of getting to resources/
-//     resourcePath = path.join(path.split(__file__)[0], 'resources')
-//     alarmPath = path.join(path.join(resourcePath, 'audio'), 'alarm.wav')
-//     wav_obj = WaveObject.from_wave_file(alarmPath)
-//     wav_obj.play()
-
 
 fn make_label(label: &str) -> gtk::Label {
     let new_label = gtk::Label::new(label);
@@ -147,9 +129,14 @@ struct Tomaty {
     total_label: gtk::Label,
 }
 
-// fn current_time() -> String {
-//     return format!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
-// }
+fn update_timer(tomtom: &mut Tomaty) {
+    let minutes = tomtom.remaining_time.num_minutes();
+    let seconds = tomtom.remaining_time.num_seconds() % 60;
+
+    let timer_formatted =
+        format!(TIMER_FRMT!(), format!("{:02}:{:02}", minutes, seconds));
+    tomtom.timer_label.set_markup(&timer_formatted);
+}
 
 // <'r> button: &'r gtk::Button
 fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
@@ -175,33 +162,28 @@ fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
             update_button(&cb_button);
             if tomtom.break_period {
                 tomtom.remaining_time = tomtom.break_time;
-                let timer_formatted = format!(TIMER_FRMT!(), format!("{}", tomtom.remaining_time));
-                tomtom.timer_label.set_markup(&timer_formatted);
-
-                add_timeout_countdown(tomaty.clone());
             } else {
                 tomtom.remaining_time = tomtom.toma_time;
-                let timer_formatted = format!(TIMER_FRMT!(), format!("{}", tomtom.remaining_time));
-                tomtom.timer_label.set_markup(&timer_formatted);
-
-                add_timeout_countdown(tomaty.clone());
             };
+            update_timer(&mut tomtom);
+            add_timeout_countdown(tomaty.clone());
         };
         println!("Button clicked!");
     });
 
 }
 
+// def alarm():
+//     # really need to find a cleaner, non-hack, way of getting to resources/
+//     resourcePath = path.join(path.split(__file__)[0], 'resources')
+//     alarmPath = path.join(path.join(resourcePath, 'audio'), 'alarm.wav')
+//     wav_obj = WaveObject.from_wave_file(alarmPath)
+//     wav_obj.play()
+
 fn alarm() {
     println!("WAKE UP FUCKO");
 }
 
-fn tick_tock(tomaty: &mut Tomaty) -> String {
-    tomaty.remaining_time = tomaty.remaining_time - Duration::seconds(1);
-    return format!("{}", tomaty.remaining_time)
-}
-
-// -> gtk::Continue
 fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
     gtk::timeout_add_seconds(1, move || {
         let mut tomtom = tomaty.borrow_mut();
@@ -229,8 +211,8 @@ fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
         if !tomtom.running {
             return gtk::Continue(false)
         }
-        let timer_formatted = format!(TIMER_FRMT!(), tick_tock(&mut tomtom));
-        tomtom.timer_label.set_markup(&timer_formatted);
+        tomtom.remaining_time = tomtom.remaining_time - Duration::seconds(1);
+        update_timer(&mut tomtom);
         return gtk::Continue(true)
     });
 }

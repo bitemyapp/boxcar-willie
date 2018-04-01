@@ -14,6 +14,9 @@ build-release:
 run: build
 	./target/debug/$(package)
 
+run-debug: build
+	$(debug-env) ./target/debug/$(package)
+
 install:
 	$(cargo) install --force
 
