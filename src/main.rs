@@ -27,7 +27,7 @@ macro_rules! COUNT {() => (r###"
 macro_rules! TOTAL_TIME {() => (r###"
 <span font='11'><tt>Total Time: {} minutes</tt></span>"###)}
 
-const TOMA_MINUTES: i64 = 3;
+const TOMA_MINUTES: i64 = 25;
 const BREAK_MINUTES: i64 = 5;
 
 const TOMA_MSG: &str = r###"
