@@ -1,41 +1,21 @@
 #![crate_type = "bin"]
 
+//! # Pomodoro Sample
+//!
+//! This sample demonstrates how to create a basic Pomodoro timer application
+//! with shared application state that callbacks access and modify.
+//! The Rust version of this GTK application is a port of github.com/ejmg/tomaty
+
 extern crate gtk;
 extern crate pango;
 extern crate chrono;
 
 use chrono::Duration;
-use chrono::Local;
-use chrono::format;
-use chrono::NaiveTime;
 
-use std::{thread, time};
-use std::io::BufReader;
-use std::fs::File;
 use std::rc::Rc;
 use std::cell::RefCell;
 
 use gtk::prelude::*;
-use gtk::Builder;
-use Continue;
-
-// Makes moving clones into closures more convenient
-macro_rules! clone {
-    (@param _) => ( _ );
-    (@param $x:ident) => ( $x );
-    ($($n:ident),+ => move || $body:expr) => (
-        {
-            $( let $n = $n.clone(); )+
-            move || $body
-        }
-    );
-    ($($n:ident),+ => move |$($p:tt),+| $body:expr) => (
-        {
-            $( let $n = $n.clone(); )+
-            move |$(clone!(@param $p),)+| $body
-        }
-    );
-}
 
 macro_rules! TIMER_FRMT {() => (r###"
 <span font='34'>{}</span>
@@ -45,23 +25,23 @@ macro_rules! COUNT {() => (r###"
 <span font='11'><tt>Tomatoros Completed: {}</tt></span>"###)}
 
 macro_rules! TOTAL_TIME {() => (r###"
-<span font='11'><tt>Total Time: {}</tt></span>"###)}
+<span font='11'><tt>Total Time: {} minutes</tt></span>"###)}
 
 const TOMA_MINUTES: i64 = 3;
 const BREAK_MINUTES: i64 = 5;
 
-const TOMA_MSG: &'static str = r###"
+const TOMA_MSG: &str = r###"
 <span font='16'>Tomatoro Done!
 Start Break?</span>"###;
 
-const BREAK_MSG: &'static str = r###"
+const BREAK_MSG: &str = r###"
 <span font='16'>Break Over!
 Start Tomatoro?</span>"###;
 
-const TOMA_RESTART_MSG: &'static str = r###"
+const TOMA_RESTART_MSG: &str = r###"
 <span font='16'>Start Tomatoro?</span>"###;
 
-const BREAK_RESTART_MSG: &'static str = r###"
+const BREAK_RESTART_MSG: &str = r###"
 <span font='16'>Start Break?</span>"###;
 
 fn make_label(label: &str) -> gtk::Label {
@@ -71,19 +51,19 @@ fn make_label(label: &str) -> gtk::Label {
     new_label.set_margin_top(0);
     new_label.set_margin_bottom(0);
     new_label.set_justify(gtk::Justification::Center);
-    return new_label
+    new_label
 }
 
 fn make_tomaty_notebook() -> gtk::Notebook {
     let new_notebook = gtk::Notebook::new();
     new_notebook.set_size_request(250, 150);
-    return new_notebook
+    new_notebook
 }
 
 fn make_tomaty_page() -> gtk::Box {
     let new_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     new_box.set_homogeneous(false);
-    return new_box
+    new_box
 }
 
 fn make_button(margin_top: i32, margin_bottom: i32) -> gtk::Button {
@@ -94,7 +74,7 @@ fn make_button(margin_top: i32, margin_bottom: i32) -> gtk::Button {
     new_button.set_margin_top(margin_top);
     new_button.set_margin_bottom(margin_bottom);
     new_button.set_halign(gtk::Align::Center);
-    return new_button
+    new_button
 }
 
 struct Tomaty {
@@ -122,13 +102,13 @@ fn update_timer(tomtom: &mut Tomaty) {
 
 fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
     let outer_tomato_heaven = tomaty.clone();
-    let ref button = outer_tomato_heaven.borrow().tomaty_button;
+    let button = &outer_tomato_heaven.borrow().tomaty_button;
 
     button.connect_clicked(move |cb_button: &gtk::Button| {
         let mut tomtom = tomaty.borrow_mut();
         if tomtom.running {
             tomtom.running = false;
-            update_button(&cb_button);
+            update_button(cb_button);
             if tomtom.break_period {
                 tomtom.timer_label.set_markup(BREAK_RESTART_MSG);
                 tomtom.remaining_time = tomtom.break_time;
@@ -138,7 +118,7 @@ fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
             };
         } else {
             tomtom.running = true;
-            update_button(&cb_button);
+            update_button(cb_button);
             if tomtom.break_period {
                 tomtom.remaining_time = tomtom.break_time;
             } else {
@@ -173,7 +153,7 @@ fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
                 tomtom.count_label.set_markup(&count_formatted);
                 let total = tomtom.tomatoro_length * tomtom.tomatos_completed;
                 let total_formatted =
-                    format!(TOTAL_TIME!(), total);
+                    format!(TOTAL_TIME!(), total.num_minutes());
                 tomtom.total_label.set_markup(&total_formatted);
                 tomtom.timer_label.set_markup(TOMA_MSG);
                 tomtom.break_period = true;
@@ -185,7 +165,7 @@ fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
         }
         tomtom.remaining_time = tomtom.remaining_time - Duration::seconds(1);
         update_timer(&mut tomtom);
-        return gtk::Continue(true)
+        gtk::Continue(true)
     });
 }
 
@@ -253,17 +233,17 @@ fn make_window() -> gtk::Window {
     notebook.append_page(&stats_page, Some(&stats_tab_label));
 
     let tomaty = Rc::new(RefCell::new(Tomaty {
-        tomatos_completed: tomatos_completed_default.clone(),
+        tomatos_completed: tomatos_completed_default,
         running: false,
         break_period: false,
-        toma_time: Duration::seconds(TOMA_MINUTES), // Duration::minutes(TOMA_MINUTES),
+        toma_time: Duration::minutes(TOMA_MINUTES),
         break_time: Duration::minutes(BREAK_MINUTES),
-        remaining_time: remaining_default.clone(),
-        tomatoro_length: tomatoro_length_default.clone(),
-        tomaty_button: tomaty_button,
-        timer_label: timer_label,
-        count_label: count_label,
-        total_label: total_label,
+        remaining_time: remaining_default,
+        tomatoro_length: tomatoro_length_default,
+        tomaty_button,
+        timer_label,
+        count_label,
+        total_label,
     }));
 
     connect_click_start(tomaty.clone());
@@ -271,11 +251,11 @@ fn make_window() -> gtk::Window {
     window
 }
 
-fn main() {
+pub fn main() {
     if gtk::init().is_err() {
         println!("Failed to initialize GTK.");
         return;
-    }
+}
     make_window();
     gtk::main();
 }

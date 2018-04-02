@@ -11,6 +11,9 @@ build:
 build-release:
 	$(cargo) build --release
 
+clippy:
+	$(cargo) clippy
+
 run: build
 	./target/debug/$(package)
 
@@ -35,6 +38,7 @@ watch:
 # You need nightly for rustfmt at the moment
 dev-deps:
 	$(cargo) install fmt
+	$(cargo) install clippy
 	$(cargo) install rustfmt-nightly
 
 .PHONY : build build-release run install test test-debug fmt watch dev-deps
