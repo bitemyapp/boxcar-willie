@@ -4,11 +4,12 @@ version = "0.1.0"
 authors = ["Chris Allen <cma@bitemyapp.com>"]
 
 [dependencies]
-gtk = { version = "0.4.0", features = ["v3_12"] }
-glib = "^0"
-gdk = "0.8.0"
-gdk-pixbuf = "^0"
-pango = "^0"
-gobject-sys = "0.6.0"
 cairo-rs = { version = "^0", features = ["png"] }
 chrono = "0.4.1"
+gdk = "0.8.0"
+gdk-pixbuf = "^0"
+gio = "^0"
+glib = "^0"
+gobject-sys = "0.6.0"
+gtk = { version = "0.4.0", features = ["v3_12"] }
+pango = "^0"

@@ -6,16 +6,17 @@
 //! with shared application state that callbacks access and modify.
 //! The Rust version of this GTK application is a port of github.com/ejmg/tomaty
 
+extern crate gio;
 extern crate gtk;
 extern crate pango;
 extern crate chrono;
 
 use chrono::Duration;
-
-use std::rc::Rc;
-use std::cell::RefCell;
-
+use gio::prelude::*;
 use gtk::prelude::*;
+use std::cell::RefCell;
+use std::env::args;
+use std::rc::Rc;
 
 macro_rules! TIMER_FRMT {() => (r###"
 <span font='34'>{}</span>
@@ -27,7 +28,7 @@ macro_rules! COUNT {() => (r###"
 macro_rules! TOTAL_TIME {() => (r###"
 <span font='11'><tt>Total Time: {} minutes</tt></span>"###)}
 
-const TOMA_MINUTES: i64 = 25;
+const TOMA_MINUTES: i64 = 3;
 const BREAK_MINUTES: i64 = 5;
 
 const TOMA_MSG: &str = r###"
@@ -176,9 +177,9 @@ fn update_button(button: &gtk::Button) {
     }
 }
 
-fn make_window() -> gtk::Window {
+fn build_ui(application: &gtk::Application) {
     let window = gtk::Window::new(gtk::WindowType::Toplevel);
-
+    window.set_application(application);
     window.set_title("tomaty: gtk::Focus");
     window.set_border_width(5);
     window.set_resizable(false);
@@ -248,14 +249,22 @@ fn make_window() -> gtk::Window {
 
     connect_click_start(tomaty.clone());
     window.show_all();
-    window
 }
 
 pub fn main() {
     if gtk::init().is_err() {
         println!("Failed to initialize GTK.");
         return;
-}
-    make_window();
-    gtk::main();
+    }
+    let application =
+        gtk::Application::new("com.github.pomodoro",
+                              gio::ApplicationFlags::empty())
+        .expect("Initialization failed...");
+
+    application.connect_startup(move |app| {
+        build_ui(app);
+    });
+    application.connect_activate(|_| {});
+
+    application.run(&args().collect::<Vec<_>>());
 }
