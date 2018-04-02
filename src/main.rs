@@ -7,16 +7,22 @@
 //! The Rust version of this GTK application is a port of github.com/ejmg/tomaty
 
 extern crate gio;
+extern crate glib;
 extern crate gtk;
 extern crate pango;
 extern crate chrono;
 
 use chrono::Duration;
 use gio::prelude::*;
+use glib::*;
+use glib::source::*;
+use glib::translate::FromGlib;
+use glib::translate::ToGlib;
 use gtk::prelude::*;
 use std::cell::RefCell;
 use std::env::args;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 macro_rules! TIMER_FRMT {() => (r###"
 <span font='34'>{}</span>
@@ -90,6 +96,8 @@ struct Tomaty {
     timer_label: gtk::Label,
     count_label: gtk::Label,
     total_label: gtk::Label,
+    // countdown_source_id: Option<SourceId>,
+    countdown_source_id: Rc<Option<SourceId>>,
 }
 
 fn update_timer(tomtom: &mut Tomaty) {
@@ -126,7 +134,25 @@ fn connect_click_start(tomaty: Rc<RefCell<Tomaty>>) {
                 tomtom.remaining_time = tomtom.toma_time;
             };
             update_timer(&mut tomtom);
-            add_timeout_countdown(tomaty.clone());
+            {
+                // match tomtom.countdown_source_id.map(|s| s.to_glib()) {
+                // let gid = {
+                //     let glib_id = tomtom.countdown_source_id.map(|s| s.to_glib());
+                //     glib_id.clone()
+                // };
+                let csi = tomtom.countdown_source_id.clone();
+                // let sid = ;
+                match *csi {
+                    None => (),
+                    Some(source_id) => source_remove(source_id),
+                    // Some(source_id) => source_remove(glib::translate::FromGlib::from_glib(source_id)),
+                }
+            }
+            let source_id = add_timeout_countdown(tomaty.clone());
+            // tomtom.countdown_source_id = Some(source_id);
+            // tomtom.countdown_source_id = Rc::new(RefCell::new(Some(source_id)));
+            tomtom.countdown_source_id = Rc::new(Some(source_id));
+            // add_timeout_countdown(&mut tomtom)
         };
         println!("Button clicked!");
     });
@@ -137,7 +163,7 @@ fn alarm() {
     println!("POMODORO OVER, TAKE A BREAK!");
 }
 
-fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
+fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) -> SourceId {
     gtk::timeout_add_seconds(1, move || {
         let mut tomtom = tomaty.borrow_mut();
         if tomtom.remaining_time == Duration::seconds(0) {
@@ -159,15 +185,21 @@ fn add_timeout_countdown(tomaty: Rc<RefCell<Tomaty>>) {
                 tomtom.timer_label.set_markup(TOMA_MSG);
                 tomtom.break_period = true;
             }
+            // tomtom.countdown_source_id = None;
+            // tomtom.countdown_source_id = Rc::new(RefCell::new(None));
+            tomtom.countdown_source_id = Rc::new(None);
             return gtk::Continue(false)
         }
         if !tomtom.running {
+            // tomtom.countdown_source_id = None;
+            // tomtom.countdown_source_id = Rc::new(RefCell::new(None));
+            tomtom.countdown_source_id = Rc::new(None);
             return gtk::Continue(false)
         }
         tomtom.remaining_time = tomtom.remaining_time - Duration::seconds(1);
         update_timer(&mut tomtom);
         gtk::Continue(true)
-    });
+    })
 }
 
 fn update_button(button: &gtk::Button) {
@@ -245,6 +277,8 @@ fn build_ui(application: &gtk::Application) {
         timer_label,
         count_label,
         total_label,
+        // countdown_source_id: Rc::new(RefCell::new(None)),
+        countdown_source_id: Rc::new(None),
     }));
 
     connect_click_start(tomaty.clone());
