@@ -41,5 +41,8 @@ dev-deps:
 	$(cargo) install clippy
 	$(cargo) install rustfmt-nightly
 
+mac-deps:
+	brew install gdk-pixbuf atk gtk+3
+
 .PHONY : build build-release run install test test-debug fmt watch dev-deps
 
